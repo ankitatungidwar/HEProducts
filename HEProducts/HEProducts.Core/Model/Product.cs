@@ -19,6 +19,11 @@ namespace HEProducts.Core.Model
         [Range(0,1000)]
         public string Price { get; set; }
         public string Category { get; set; }
-        public string Image { get; set; }
+
+
+        public Product()
+        {
+            this.ID = Guid.NewGuid().ToString();
+        }
     }
 }
