@@ -1,8 +1,10 @@
-﻿using HEProducts.Core.Model;
+﻿using HEProducts.Core.Contracts;
+using HEProducts.Core.Model;
 using HEProducts.Core.ViewModel;
 using HEProducts.DataAccess.InMemory;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -11,13 +13,14 @@ namespace HEProducts.WebUI.Controllers
 {
     public class ProductManagerController : Controller
     {
-        ProductRepository context;
-        ProductCategoryRepository productCategories;
+        IRepository<Product> context;
+        IRepository<ProductCategory> productCategories;
 
-        public ProductManagerController()
+        public ProductManagerController(IRepository<Product> productContext, 
+            IRepository<ProductCategory> productCategoryContext )
         {
-            context = new ProductRepository();
-            productCategories = new ProductCategoryRepository();
+           context = productContext;
+           productCategories = productCategoryContext;
         }
 
         // GET: ProductManager
@@ -39,7 +42,7 @@ namespace HEProducts.WebUI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(Product product)//Model binding
+        public ActionResult Create(Product product, HttpPostedFileBase file)//Model binding
         {
             if(!ModelState.IsValid)
             {
@@ -48,6 +51,11 @@ namespace HEProducts.WebUI.Controllers
             }
             else
             {
+                if(file != null)
+                {
+                    product.Image = product.Id + Path.GetExtension(file.FileName);
+                    file.SaveAs(Server.MapPath("//Content//ProductImages//") + product.Image);
+                }
                 context.Insert(product);
                 context.Commit();
                 return RedirectToAction("Index");
@@ -73,9 +81,9 @@ namespace HEProducts.WebUI.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(Product product, string Id)
+        public ActionResult Edit(Product product, string Id, HttpPostedFileBase file)
         {
-            Product productToEdit = context.Find(product.ID);
+            Product productToEdit = context.Find(product.Id);
             if (productToEdit == null)
             {
                 return HttpNotFound();
@@ -86,6 +94,12 @@ namespace HEProducts.WebUI.Controllers
                 {
                     return View(product);
                 }
+                if (file != null)
+                {
+                    product.Image = product.Id + Path.GetExtension(file.FileName);
+                    file.SaveAs(Server.MapPath("//Content//ProductImages//") + product.Image);
+                }
+                productToEdit.Image = product.Image;
                 productToEdit.Category = product.Category;
                 productToEdit.Description = product.Description;
                 productToEdit.Price = product.Price;
